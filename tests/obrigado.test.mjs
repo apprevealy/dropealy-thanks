@@ -16,6 +16,7 @@ class Element {
 }
 function page(query = '', options = {}) {
   const email = new Element(), password = new Element(), box = new Element(), label = new Element();
+  label.textContent = 'Senha';
   password.parentElement = { querySelector: () => label };
   const links = Array.from({ length: 3 }, () => new Element());
   const support = [new Element()];
@@ -61,7 +62,7 @@ for (const [name, expected] of [['Paulo Silva','Paulo12345'],['Gian Reis','Gian1
     const p = page(purchase(name));
     assert.equal(p.email.textContent, 'cliente+teste@example.com');
     assert.equal(p.password.textContent, expected);
-    assert.equal(p.label.textContent, 'Senha inicial');
+    assert.equal(p.label.textContent, 'Senha');
   });
 }
 test('parâmetros nativos prevalecem sem misturar nome ou e-mail legado', () => {
@@ -146,4 +147,29 @@ test('expiração limpa credenciais e timers de cópia, sem restaurar dado antig
 test('saída/volta do cache da página não conserva senha', async () => {
   const p = page(purchase()); p.dispatch('pagehide', {});
   assert.equal(p.password.textContent, 'Senha inicial indisponível'); assert.equal(await p.click(), false);
+});
+
+test('aviso acessível não ocupa espaço nem substitui o rótulo original', () => {
+  const p = page(purchase());
+  assert.match(p.note.style.cssText, /position:absolute/);
+  assert.match(p.note.style.cssText, /width:1px;height:1px/);
+  assert.match(p.note.style.cssText, /overflow:hidden/);
+  assert.equal(p.label.textContent, 'Senha');
+  assert.equal(p.password.attrs['aria-describedby'], 'credentials-status');
+  assert.equal(p.email.attrs['aria-describedby'], 'credentials-status');
+  assert.match(p.password.title, /Se já possuía conta/);
+  assert.match(p.password.title, /Clique para copiar/);
+});
+test('aviso de popup bloqueado permanece disponível sem acrescentar blocos visuais', async () => {
+  const p = page(purchase(), { popupBlocked: true });
+  await p.click();
+  assert.match(p.note.style.cssText, /position:absolute/);
+  assert.match(p.email.title, /bloqueou/);
+  assert.equal(p.label.textContent, 'Senha');
+});
+test('expiração atualiza descrição acessível sem duplicar identificadores', () => {
+  const p = page(purchase()); p.fireTimers(1200000);
+  assert.equal(p.password.attrs['aria-describedby'], 'credentials-status');
+  assert.match(p.password.title, /expirou/);
+  assert.match(p.note.style.cssText, /position:absolute/);
 });
