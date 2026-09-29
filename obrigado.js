@@ -40,14 +40,22 @@
     note.id = 'credentials-status';
     note.setAttribute('role', 'status');
     note.setAttribute('aria-live', 'polite');
-    note.style.cssText = 'font-size:14px;line-height:1.45;margin-top:12px;';
+    // Aviso acessível fora do fluxo: não acrescentar altura, margem ou um item ao grid/flex.
+    note.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0;';
     if (box) box.appendChild(note);
     const initialNotice = password
       ? 'Senha inicial para novos cadastros, válida após a aprovação do pagamento. Se já possuía conta, use sua senha atual. Depois de entrar, altere sua senha.'
       : 'Os dados completos do comprador não chegaram nesta página. Use o e-mail da compra e suas credenciais de acesso, ou fale com o suporte.';
-    note.textContent = initialNotice;
-    const label = passwordElement.parentElement && passwordElement.parentElement.querySelector('label');
-    if (label) label.textContent = 'Senha inicial';
+    function setNotice(message) {
+      note.textContent = message;
+      [emailElement, passwordElement].forEach(element => {
+        const describedBy = (element.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+        if (!describedBy.includes(note.id)) describedBy.push(note.id);
+        element.setAttribute('aria-describedby', describedBy.join(' '));
+        element.title = 'Clique para copiar. ' + message;
+      });
+    }
+    setNotice(initialNotice);
     const setCredentials = () => {
       emailElement.textContent = email || 'E-mail não recebido do checkout';
       passwordElement.textContent = password || 'Senha inicial indisponível';
@@ -65,7 +73,7 @@
       copyTimers.forEach(timer => window.clearTimeout(timer));
       copyTimers.clear();
       setCredentials();
-      note.textContent = 'Esta exibição de dados expirou. Entre com suas credenciais ou fale com o suporte.';
+      setNotice('Esta exibição de dados expirou. Entre com suas credenciais ou fale com o suporte.');
     }
     const expiryTimer = window.setTimeout(expire, 20 * 60 * 1000);
     window.addEventListener('pagehide', () => { window.clearTimeout(expiryTimer); expire(); }, { once: true });
@@ -111,12 +119,12 @@
         if (!child) {
           stop();
           handoffEnabled = false;
-          note.textContent = 'O navegador bloqueou a nova aba. Copie os dados e clique novamente em Acessar Ferramenta para entrar manualmente.';
+          setNotice('O navegador bloqueou a nova aba. Copie os dados e clique novamente em Acessar Ferramenta para entrar manualmente.');
           return;
         }
         timer = window.setTimeout(() => {
           stop();
-          note.textContent = 'Caso os campos não tenham sido preenchidos na outra aba, copie os dados desta página. ' + initialNotice;
+          setNotice('Caso os campos não tenham sido preenchidos na outra aba, copie os dados desta página. ' + initialNotice);
         }, 20000);
       });
     });
@@ -126,7 +134,6 @@
       link.href = 'https://wa.me/5561994210220?text=' + encodeURIComponent('Olá, preciso de ajuda com meu acesso à Dropealy.');
     });
     [emailElement, passwordElement].forEach(element => {
-      element.title = 'Clique para copiar';
       element.addEventListener('click', async () => {
         const text = element === emailElement ? email : password;
         if (!text) return;
@@ -147,7 +154,7 @@
             element.textContent = element === emailElement ? email || 'E-mail não recebido do checkout' : password || 'Senha inicial indisponível';
             copyTimers.delete(element);
           }, 1500));
-        } catch (_) { note.textContent = 'Selecione o texto do campo e copie manualmente.'; }
+        } catch (_) { setNotice('Selecione o texto do campo e copie manualmente.'); }
       });
     });
 
