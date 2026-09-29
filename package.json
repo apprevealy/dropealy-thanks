@@ -1,0 +1,12 @@
+{
+  "name": "lp-nexy-obrigado",
+  "version": "1.0.0",
+  "description": "Landing page Revealy",
+  "scripts": {
+    "dev": "npx serve .",
+    "start": "npx serve ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

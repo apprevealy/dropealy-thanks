@@ -1,0 +1,630 @@
+/* ========================================
+   Revealy - Página de Obrigado/Acesso
+   Baseado no design da Nexy com identidade roxa
+   ======================================== */
+
+:root {
+  /* Cores principais - Revealy Purple */
+  --color-bg: #050209;
+  --color-surface: #12121A;
+  --color-surface-light: #18181F;
+  
+  /* Texto */
+  --text-principal: #F7F7FB;
+  --text-texto-esc: #0B0B10;
+  --color-text-primary: #F7F7FB;
+  --color-text-secondary: #B8B8C8;
+  --color-text-muted: #6B6B7B;
+  
+  /* Acentos - Roxo Claro Revealy */
+  --color-primary: #AF83D8;
+  --color-primary-light: #C4A8E0;
+  --color-primary-dark: #7A30BE;
+  --color-accent: #E4D6F2;
+  
+  /* Gradientes */
+  --gradient-primary: linear-gradient(90deg, #AF83D8 0%, #C4A8E0 50%, #AF83D8 100%);
+  --gradient-glow: radial-gradient(circle at 34% 58%, rgba(255, 255, 255, 0.6) 59%, rgba(175, 131, 216, 1) 100%);
+  
+  /* Tipografia */
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* Espaçamento */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4rem;
+  --space-3xl: 6rem;
+  
+  /* Bordas */
+  --radius-sm: 16px;
+  --radius-md: 24px;
+  --radius-full: 99px;
+  --radius-pill: 90px;
+  
+  /* Sombras */
+  --shadow-card: 0px 4px 6px -4px rgba(0, 0, 0, 0.1), 0px 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0px 0px 200px 0px rgba(175, 131, 216, 0.5);
+  
+  /* Transições */
+  --transition-fast: 0.2s ease;
+  --transition-base: 0.3s ease;
+}
+
+/* Reset & Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ========================================
+   Componentes: Botões
+   ======================================== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  font-family: var(--font-main);
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: var(--gradient-primary);
+  color: var(--color-text-primary);
+  box-shadow: 0 0 0 1px rgba(175, 131, 216, 0.3);
+}
+
+.btn--primary:hover {
+  filter: brightness(1.15);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* ========================================
+   Header
+   ======================================== */
+
+.header {
+  position: fixed;
+  top: var(--space-md);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  width: calc(100% - var(--space-lg) * 2);
+  max-width: 1240px;
+}
+
+.header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 96px;
+  padding: 0 20px;
+  background: #12121A;
+  border: 1px solid #2A2A38;
+  border-radius: 99px;
+}
+
+.header__logo {
+  display: flex;
+  align-items: center;
+}
+
+.header__logo-text {
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: 28px;
+  background: linear-gradient(90deg, #AF83D8 0%, #C4A8E0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header__nav {
+  display: flex;
+  align-items: center;
+}
+
+.header__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 250px;
+  height: 60px;
+  font-family: var(--font-main);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.21;
+  color: #F7F7FB;
+  background: linear-gradient(90deg, #AF83D8 0%, #C4A8E0 50%, #AF83D8 100%);
+  border: 1px solid rgba(247, 247, 251, 0.5);
+  border-radius: 90px;
+  box-shadow: inset 0 0 0 1px rgba(247, 247, 251, 0.1);
+  transition: all var(--transition-base);
+}
+
+.header__cta:hover {
+  filter: brightness(1.15);
+  box-shadow: 0px 0px 40px rgba(175, 131, 216, 0.5);
+  transform: translateY(-2px);
+}
+
+/* ========================================
+   Welcome Section (Primeira Dobra)
+   ======================================== */
+
+.welcome {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3xl) var(--space-lg) 140px;
+  overflow: hidden;
+}
+
+.welcome__bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #050209 0%, #0A0512 50%, #050209 100%);
+}
+
+/* Efeitos de Glow Roxo Claro Neon */
+.welcome__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.welcome__glow--1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(175, 131, 216, 0.6) 0%, transparent 70%);
+  top: 20%;
+  left: 10%;
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.welcome__glow--2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(196, 168, 224, 0.5) 0%, transparent 70%);
+  bottom: 20%;
+  right: 10%;
+  animation: glow-pulse 4s ease-in-out infinite 2s;
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+.welcome__content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 900px;
+}
+
+.welcome__title {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: var(--space-lg);
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.welcome__title--accent {
+  background: linear-gradient(90deg, #AF83D8 0%, #C4A8E0 50%, #AF83D8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% auto;
+  animation: gradient-shift 3s ease infinite;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: 0% center;
+  }
+}
+
+.welcome__subtitle {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin-bottom: var(--space-2xl);
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.welcome__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+/* ========================================
+   Credentials Section (Segunda Dobra)
+   ======================================== */
+
+.credentials {
+  position: relative;
+  padding: var(--space-3xl) var(--space-lg);
+  background: #000000;
+  min-height: 796px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.credentials__bg {
+  position: absolute;
+  inset: 0;
+  background: #000000;
+  z-index: 0;
+}
+
+/* Efeitos de Glow Roxo Claro Neon */
+.credentials__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.credentials__glow--1 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(175, 131, 216, 0.5) 0%, transparent 70%);
+  top: 15%;
+  left: 5%;
+  animation: glow-pulse 5s ease-in-out infinite;
+}
+
+.credentials__glow--2 {
+  width: 450px;
+  height: 450px;
+  background: radial-gradient(circle, rgba(196, 168, 224, 0.4) 0%, transparent 70%);
+  bottom: 15%;
+  right: 5%;
+  animation: glow-pulse 5s ease-in-out infinite 2.5s;
+}
+
+.credentials__content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+}
+
+.credentials__title {
+  font-family: var(--font-main);
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.21;
+  color: var(--text-principal);
+  margin-bottom: var(--space-md);
+}
+
+.credentials__subtitle {
+  font-family: var(--font-main);
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 400;
+  line-height: 1.21;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2xl);
+}
+
+.credentials__box {
+  background: linear-gradient(#E4D6F2, #E4D6F2) padding-box,
+              linear-gradient(180deg, #AF83D8 0%, #C4A8E0 100%) border-box;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  padding: var(--space-2xl);
+  margin-bottom: var(--space-2xl);
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  text-align: left;
+}
+
+.credentials__field {
+  margin-bottom: var(--space-lg);
+}
+
+.credentials__field:last-child {
+  margin-bottom: 0;
+}
+
+.credentials__label {
+  display: block;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 600;
+  color: #7A30BE;
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.credentials__value {
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 500;
+  color: #050209;
+  background: #F7F7FB;
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #AF83D8;
+  word-break: break-all;
+}
+
+.credentials__help {
+  text-align: center;
+}
+
+.credentials__help-text {
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.21;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.credentials__contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  justify-content: center;
+}
+
+.credentials__contact-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  font-family: var(--font-main);
+  font-weight: 500;
+  font-size: 16px;
+  border-radius: var(--radius-pill);
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.credentials__contact-btn--whatsapp {
+  background: #25D366;
+  color: #FFFFFF;
+  border: none;
+}
+
+.credentials__contact-btn--whatsapp:hover {
+  background: #20BD5A;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+}
+
+.credentials__contact-btn--email {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.credentials__contact-btn--email:hover {
+  background: var(--color-surface-light);
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.credentials__contact-icon {
+  flex-shrink: 0;
+}
+
+/* ========================================
+   Footer
+   ======================================== */
+
+.footer {
+  position: relative;
+  background: var(--color-bg);
+}
+
+.footer__svg-wrap {
+  position: relative;
+}
+
+.footer__bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 0 var(--space-lg) 1rem;
+  z-index: 2;
+  gap: var(--space-md);
+}
+
+.footer__contact {
+  font-family: var(--font-main);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.21;
+  color: var(--color-accent);
+  margin: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.footer__contact-br {
+  display: block;
+}
+
+.footer__svg {
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+}
+
+.footer__svg svg {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  display: block;
+}
+
+.footer__copyright {
+  background: var(--color-accent);
+  padding: 19px var(--space-lg);
+  text-align: center;
+}
+
+.footer__copyright p {
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.21;
+  color: #000000;
+  margin: 0;
+}
+
+/* ========================================
+   Responsividade
+   ======================================== */
+
+@media (max-width: 1024px) {
+  .header {
+    width: calc(100% - var(--space-md) * 2);
+  }
+
+  .header__inner {
+    padding: 0 16px;
+  }
+
+  .header__cta {
+    width: 200px;
+    font-size: 16px;
+  }
+
+  .credentials__box {
+    padding: var(--space-xl);
+  }
+}
+
+@media (max-width: 768px) {
+  .header__inner {
+    height: 80px;
+  }
+
+  .header__logo-text {
+    font-size: 24px;
+  }
+
+  .header__cta {
+    width: 160px;
+    height: 50px;
+    font-size: 14px;
+  }
+
+  .welcome {
+    padding: var(--space-2xl) var(--space-md) 100px;
+  }
+
+  .credentials {
+    padding: var(--space-2xl) var(--space-md);
+    min-height: auto;
+  }
+
+  .credentials__contact {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .credentials__contact-btn {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+
+  .footer__contact {
+    font-size: 18px;
+  }
+
+  .footer__contact-br {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome__title {
+    font-size: 2rem;
+  }
+
+  .credentials__title {
+    font-size: 1.5rem;
+  }
+
+  .credentials__subtitle {
+    font-size: 1rem;
+  }
+
+  .credentials__value {
+    font-size: 16px;
+    padding: 14px 16px;
+  }
+}
