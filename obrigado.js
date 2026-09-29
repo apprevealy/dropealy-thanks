@@ -1,188 +1,178 @@
-/**
- * Dropealy - Página de Obrigado/Acesso
- * Injeção dinâmica de credenciais e interatividade
- */
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Função para obter parâmetros da URL
-  function getUrlParameter(name) {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get(name);
-  }
-
-  function firstAvailableParameter(names) {
-    for (const name of names) {
-      const value = getUrlParameter(name);
-      if (value && value.trim()) return value.trim();
+/** Dropealy: dados recebidos do checkout, sem confundir exibição com confirmação de pagamento. */
+(() => {
+  'use strict';
+  const APP_ORIGIN = 'https://app.dropealy.com';
+  const THANKS_ORIGIN = 'https://thanks.dropealy.com';
+  const LOGIN_URL = `${APP_ORIGIN}/login`;
+  const EMAIL_KEYS = ['e', 'email', 'e-mail', 'user_email', 'customer_email'];
+  const NAME_KEYS = ['payerName', 'nome', 'name', 'first_name', 'firstname', 'customer_name', 'customer_first_name'];
+  const params = new URLSearchParams(window.location.search);
+  function parameter(keys, max) {
+    for (const key of keys) {
+      if (!params.has(key)) continue;
+      const values = params.getAll(key);
+      if (values.length !== 1 || values[0].length > max) return '';
+      return values[0].trim();
     }
     return '';
   }
-
-  function normalizeFirstName(fullName) {
-    const firstName = String(fullName || '').trim().split(/\s+/)[0] || '';
-    const normalized = firstName
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z]/g, '');
-
-    if (!normalized) return 'Usuario';
-    return normalized.charAt(0).toUpperCase() + normalized.slice(1).toLowerCase();
+  function firstNameOf(name) {
+    const letters = name.trim().split(/\s+/)[0].normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z]/g, '');
+    return letters ? letters[0].toUpperCase() + letters.slice(1).toLowerCase() : '';
   }
+  const rawEmail = parameter(EMAIL_KEYS, 254);
+  let email = /^[^\s@<>"\\]+@[^\s@<>"\\]+\.[^\s@<>"\\]{2,}$/.test(rawEmail) ? rawEmail.toLowerCase() : '';
+  let firstName = firstNameOf(parameter(NAME_KEYS, 160));
+  let password = email && firstName && firstName.length <= 123 ? `${firstName}12345` : '';
+  const cleanUrl = new URL(window.location.href);
+  [...EMAIL_KEYS, ...NAME_KEYS, 'password', 'senha', 'user_password', 'customer_password',
+    'phone', 'telefone', 'cpf', 'document', 'cep', 'address', 'ppayId'].forEach(key => cleanUrl.searchParams.delete(key));
+  // Os parâmetros chegaram do provedor. Não os encaminhar aos links de login/suporte.
+  try { window.history.replaceState(window.history.state, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash); } catch (_) { /* Pode estar em iframe restrito. */ }
 
-  // Função para injetar credenciais
-  function injectCredentials() {
+  function init() {
     const emailElement = document.getElementById('user-email');
     const passwordElement = document.getElementById('user-password');
-
     if (!emailElement || !passwordElement) return;
+    const box = document.querySelector('.credentials-box');
+    const note = document.createElement('p');
+    note.id = 'credentials-status';
+    note.setAttribute('role', 'status');
+    note.setAttribute('aria-live', 'polite');
+    note.style.cssText = 'font-size:14px;line-height:1.45;margin-top:12px;';
+    if (box) box.appendChild(note);
+    const initialNotice = password
+      ? 'Senha inicial para novos cadastros, válida após a aprovação do pagamento. Se já possuía conta, use sua senha atual. Depois de entrar, altere sua senha.'
+      : 'Os dados completos do comprador não chegaram nesta página. Use o e-mail da compra e suas credenciais de acesso, ou fale com o suporte.';
+    note.textContent = initialNotice;
+    const label = passwordElement.parentElement && passwordElement.parentElement.querySelector('label');
+    if (label) label.textContent = 'Senha inicial';
+    const setCredentials = () => {
+      emailElement.textContent = email || 'E-mail não recebido do checkout';
+      passwordElement.textContent = password || 'Senha inicial indisponível';
+    };
+    setCredentials();
 
-    // Tenta obter e-mail de múltiplas fontes
-    let userEmail = firstAvailableParameter(['email', 'e-mail', 'user_email', 'customer_email']);
-
-    // Se não estiver na URL, tenta obter do localStorage
-    if (!userEmail) {
-      userEmail = localStorage.getItem('dropealy_user_email') || localStorage.getItem('revealy_user_email');
+    // Credenciais só em memória; nunca recuperar comprador anterior do armazenamento do navegador.
+    let handoffEnabled = Boolean(email && password);
+    const pending = new Set();
+    const copyTimers = new Map();
+    function expire() {
+      handoffEnabled = false;
+      email = ''; password = ''; firstName = '';
+      pending.forEach(stop => stop());
+      copyTimers.forEach(timer => window.clearTimeout(timer));
+      copyTimers.clear();
+      setCredentials();
+      note.textContent = 'Esta exibição de dados expirou. Entre com suas credenciais ou fale com o suporte.';
     }
+    const expiryTimer = window.setTimeout(expire, 20 * 60 * 1000);
+    window.addEventListener('pagehide', () => { window.clearTimeout(expiryTimer); expire(); }, { once: true });
 
-    // Se ainda não tiver, tenta obter de sessionStorage
-    if (!userEmail) {
-      userEmail = sessionStorage.getItem('dropealy_user_email') || sessionStorage.getItem('revealy_user_email');
-    }
-
-    const userName = firstAvailableParameter([
-      'nome', 'name', 'first_name', 'firstname', 'customer_name', 'customer_first_name'
-    ]);
-    const emailName = userEmail ? userEmail.split('@')[0].split(/[._+-]/)[0] : '';
-    const firstName = normalizeFirstName(userName || emailName);
-    const password = `${firstName}12345`;
-    const planName = firstAvailableParameter([
-      'plano', 'plan', 'plan_name', 'product', 'product_name', 'produto', 'offer_name'
-    ]) || 'Master';
-
-    // Injeta e-mail no DOM
-    if (userEmail) {
-      emailElement.textContent = userEmail;
-    } else {
-      emailElement.textContent = 'Seu e-mail será inserido aqui';
-    }
-
-    passwordElement.textContent = password;
-
-    const platformUrl = new URL('https://app.dropealy.com/login');
-    if (userEmail) platformUrl.searchParams.set('email', userEmail);
-    platformUrl.searchParams.set('password', password);
     document.querySelectorAll('.platform-link').forEach(link => {
-      link.href = platformUrl.toString();
-    });
-
-    const supportMessage = `Olá, tudo bem? Meu nome é ${firstName} e acabei de comprar o plano ${planName} da Dropealy.`;
-    const supportUrl = `https://wa.me/5561994210220?text=${encodeURIComponent(supportMessage)}`;
-    document.querySelectorAll('.support-link').forEach(link => {
-      link.href = supportUrl;
-    });
-  }
-
-  // Função para copiar credenciais para o clipboard
-  function setupCopyToClipboard() {
-    const credentialsValues = document.querySelectorAll('.credentials-value');
-    
-    credentialsValues.forEach(element => {
-      element.title = 'Clique para copiar';
-      
-      element.addEventListener('click', async () => {
-        const text = element.textContent;
-        
-        // Não copia se for o texto placeholder
-        if (text.includes('será inserido aqui')) return;
-        
-        try {
-          await navigator.clipboard.writeText(text);
-          
-          // Feedback visual
-          const originalText = element.textContent;
-          const originalColor = element.style.color;
-          
-          element.textContent = 'Copiado!';
-          element.style.color = '#25D366';
-          
-          setTimeout(() => {
-            element.textContent = originalText;
-            element.style.color = originalColor;
-          }, 1500);
-          
-        } catch (err) {
-          console.error('Erro ao copiar:', err);
-          // Fallback para navegadores antigos
-          const textArea = document.createElement('textarea');
-          textArea.value = text;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-          
-          element.textContent = 'Copiado!';
-          setTimeout(() => {
-            element.textContent = text;
-          }, 1500);
+      link.href = LOGIN_URL;
+      link.setAttribute('rel', 'noopener noreferrer');
+      link.addEventListener('click', event => {
+        // Abrir pelo menu ou com modificador usa o link normal, sem dados na URL.
+        if (!handoffEnabled || window.location.origin !== THANKS_ORIGIN ||
+            event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        let child = null;
+        let timer = null;
+        let nonce = '';
+        let sent = false;
+        let stopped = false;
+        function stop() {
+          stopped = true;
+          window.removeEventListener('message', onMessage);
+          if (timer !== null) window.clearTimeout(timer);
+          pending.delete(stop);
+          child = null;
         }
+        function onMessage(event) {
+          if (stopped || !child || event.origin !== APP_ORIGIN || event.source !== child) return;
+          const data = event.data;
+          if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+          if (data.type === 'DROPEALY_PREFILL_READY' && !sent &&
+              typeof data.nonce === 'string' && /^[a-f0-9]{32}$/.test(data.nonce) && email && password) {
+            nonce = data.nonce;
+            sent = true;
+            try { child.postMessage({ type: 'DROPEALY_PREFILL', nonce, email, password }, APP_ORIGIN); }
+            catch (_) { stop(); }
+          } else if (data.type === 'DROPEALY_PREFILL_ACK' && sent && data.nonce === nonce) {
+            stop();
+          }
+        }
+        window.addEventListener('message', onMessage);
+        pending.add(stop);
+        // Opener é temporário, somente entre os dois domínios fixos, e cortado no receptor.
+        try { child = window.open(`${LOGIN_URL}?from=thanks`, '_blank'); } catch (_) { child = null; }
+        if (!child) {
+          stop();
+          handoffEnabled = false;
+          note.textContent = 'O navegador bloqueou a nova aba. Copie os dados e clique novamente em Acessar Ferramenta para entrar manualmente.';
+          return;
+        }
+        timer = window.setTimeout(() => {
+          stop();
+          note.textContent = 'Caso os campos não tenham sido preenchidos na outra aba, copie os dados desta página. ' + initialNotice;
+        }, 20000);
       });
     });
-  }
 
-  // Animação de entrada nas seções (Intersection Observer)
-  function setupScrollAnimations() {
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
+    // Não presumir plano Master nem inserir e-mail/senha no WhatsApp.
+    document.querySelectorAll('.support-link').forEach(link => {
+      link.href = 'https://wa.me/5561994210220?text=' + encodeURIComponent('Olá, preciso de ajuda com meu acesso à Dropealy.');
+    });
+    [emailElement, passwordElement].forEach(element => {
+      element.title = 'Clique para copiar';
+      element.addEventListener('click', async () => {
+        const text = element === emailElement ? email : password;
+        if (!text) return;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text);
+          else {
+            const area = document.createElement('textarea');
+            area.value = text;
+            area.style.cssText = 'position:fixed;opacity:0;';
+            document.body.appendChild(area);
+            try { area.select(); if (!document.execCommand('copy')) throw new Error('copy_unavailable'); }
+            finally { area.remove(); }
+          }
+          if ((element === emailElement ? email : password) !== text) return;
+          if (copyTimers.has(element)) window.clearTimeout(copyTimers.get(element));
+          element.textContent = 'Copiado!';
+          copyTimers.set(element, window.setTimeout(() => {
+            element.textContent = element === emailElement ? email || 'E-mail não recebido do checkout' : password || 'Senha inicial indisponível';
+            copyTimers.delete(element);
+          }, 1500));
+        } catch (_) { note.textContent = 'Selecione o texto do campo e copie manualmente.'; }
+      });
+    });
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
+    if (typeof IntersectionObserver !== 'undefined') {
+      const observer = new IntersectionObserver(entries => entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.style.opacity = '1';
           entry.target.style.transform = 'translateY(0)';
+          observer.unobserve(entry.target);
         }
+      }), { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+      document.querySelectorAll('.hero__content, .form-container, .credentials-box, .credentials-contact').forEach(el => {
+        el.style.opacity = '0'; el.style.transform = 'translateY(30px)';
+        el.style.transition = 'opacity 0.8s ease, transform 0.8s ease'; observer.observe(el);
       });
-    }, observerOptions);
-
-    // Aplica animação aos elementos
-    const animatedElements = document.querySelectorAll(
-      '.hero__content, .form-container, .credentials-box, .credentials-contact'
-    );
-    
-    animatedElements.forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(30px)';
-      el.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-      observer.observe(el);
-    });
-  }
-
-  // Smooth scroll para links internos
-  function setupSmoothScroll() {
+    }
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
+      anchor.addEventListener('click', function (event) {
         const href = this.getAttribute('href');
-        if (href === '#') return;
-        
-        e.preventDefault();
-        const target = document.querySelector(href);
-        if (target) {
-          target.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-          });
-        }
+        if (!href || href === '#') return;
+        const target = document.getElementById(href.slice(1));
+        if (target) { event.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       });
     });
   }
-
-  // Inicializa todas as funcionalidades
-  injectCredentials();
-  setupCopyToClipboard();
-  setupScrollAnimations();
-  setupSmoothScroll();
-
-  // Log para debug (remover em produção)
-  console.log('Dropealy - Página de Obrigado carregada com sucesso');
-});
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
+  else init();
+})();
